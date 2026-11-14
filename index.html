@@ -1,1 +1,246 @@
 
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#174c76">
+<title>美國天天樂AI預測</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#edf3f9;
+ color:#18334c;
+ font-family:Arial,"Noto Sans TC",sans-serif;
+}
+header{
+ background:#174c76;
+ color:white;
+ padding:25px 10px;
+ text-align:center;
+}
+h1{font-size:27px;margin:0}
+main{
+ max-width:600px;
+ margin:25px auto;
+ padding:12px;
+}
+.card{
+ background:white;
+ border-radius:15px;
+ padding:28px 12px;
+ text-align:center;
+ box-shadow:0 3px 12px #0001;
+}
+.date{font-size:20px;margin:18px 0 25px}
+h2{font-size:22px;margin:18px 0}
+.numbers{
+ display:flex;
+ justify-content:center;
+ flex-wrap:wrap;
+ gap:9px;
+ margin:30px 0;
+}
+.ball{
+ width:52px;
+ height:52px;
+ border-radius:50%;
+ background:#17679c;
+ color:white;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:23px;
+ font-weight:bold;
+}
+button{
+ background:#17679c;
+ color:white;
+ border:0;
+ border-radius:10px;
+ padding:14px 22px;
+ font-size:18px;
+ font-weight:bold;
+ cursor:pointer;
+}
+input{
+ padding:10px;
+ border:1px solid #aaa;
+ border-radius:8px;
+ font-size:18px;
+ max-width:100%;
+}
+input[type=number]{
+ width:65px;
+ text-align:center;
+}
+.inputs{
+ display:flex;
+ justify-content:center;
+ flex-wrap:wrap;
+ gap:8px;
+ margin:20px 0;
+}
+#editor{display:none;margin-top:25px}
+.note{
+ color:#777;
+ font-size:14px;
+ margin-top:20px;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>美國天天樂AI預測</h1>
+</header>
+
+<main>
+<section class="card">
+
+<div class="date">
+日期：
+<span id="showDate">尚未填寫</span>
+</div>
+
+<h2>預測號碼</h2>
+
+<div class="numbers" id="showNumbers"></div>
+
+<button onclick="openEditor()">
+填寫／修改預測
+</button>
+
+<div id="editor">
+
+<h2>填寫日期</h2>
+<input type="date" id="dateInput">
+
+<h2>輸入5個預測號碼</h2>
+<div class="inputs" id="numberInputs"></div>
+
+<p>
+<button onclick="saveData()">
+儲存預測
+</button>
+</p>
+
+</div>
+
+<p class="note">號碼範圍：01～39</p>
+
+</section>
+</main>
+
+<script>
+const KEY="us539PredictionV1";
+
+const inputBox=document.getElementById("numberInputs");
+
+for(let i=0;i<5;i++){
+ const input=document.createElement("input");
+ input.type="number";
+ input.min=1;
+ input.max=39;
+ input.id="n"+i;
+ input.placeholder=String(i+1);
+ inputBox.appendChild(input);
+}
+
+function makeBall(n){
+ const ball=document.createElement("div");
+ ball.className="ball";
+ ball.textContent=String(n).padStart(2,"0");
+ return ball;
+}
+
+function displayData(){
+ const box=document.getElementById("showNumbers");
+ box.innerHTML="";
+
+ const raw=localStorage.getItem(KEY);
+
+ if(!raw){
+  document.getElementById("showDate").textContent="尚未填寫";
+  return;
+ }
+
+ try{
+  const data=JSON.parse(raw);
+  document.getElementById("showDate").textContent=data.date;
+  data.numbers.forEach(n=>box.appendChild(makeBall(n)));
+ }catch(e){
+  alert("讀取資料失敗");
+ }
+}
+
+function openEditor(){
+ document.getElementById("editor").style.display="block";
+
+ const raw=localStorage.getItem(KEY);
+
+ if(raw){
+  try{
+   const data=JSON.parse(raw);
+   document.getElementById("dateInput").value=data.date;
+   data.numbers.forEach((n,i)=>{
+    document.getElementById("n"+i).value=n;
+   });
+  }catch(e){}
+ }else{
+  const now=new Date();
+  const local=new Date(
+   now.getTime()-now.getTimezoneOffset()*60000
+  );
+  document.getElementById("dateInput").value=
+   local.toISOString().slice(0,10);
+ }
+}
+
+function saveData(){
+ const date=document.getElementById("dateInput").value;
+ const numbers=[];
+
+ if(!date){
+  alert("請選擇日期");
+  return;
+ }
+
+ for(let i=0;i<5;i++){
+  const value=document.getElementById("n"+i).value;
+  const n=Number(value);
+
+  if(value.trim()==="" ||
+     !Number.isInteger(n) ||
+     n<1 || n>39){
+   alert("請輸入正確號碼（01～39）");
+   return;
+  }
+
+  numbers.push(n);
+ }
+
+ if(new Set(numbers).size!==5){
+  alert("5個號碼不可重複");
+  return;
+ }
+
+ const data={date,numbers};
+
+ try{
+  localStorage.setItem(KEY,JSON.stringify(data));
+  document.getElementById("editor").style.display="none";
+  displayData();
+  alert("預測號碼儲存成功！");
+ }catch(e){
+  alert("儲存失敗，請檢查瀏覽器設定");
+ }
+}
+
+displayData();
+</script>
+
+</body>
+</html>
